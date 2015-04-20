@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Demo - Compromising Firefox Private Browsing</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    </head>
+    <body>
+        <h2>Throwaway Interface</h2>
+        <h3>Description</h3>
+        <p>
+            This window should be in Firefox's Private Browsing mode. If you did
+            not open this window in private browsing mode, copy and paste this
+            url into a new private browsing mode window. Be sure to keep the
+            tab with your real username open.
+        </p>
+        <h3>Follow these steps to create throwaway account:</h3>
+        <ol>
+            <li>
+                Create your throwaway username:
+                <form style="display:inline;">
+                    <input id="throwaway" placeholder="(e.g. throwaway123)"/>
+                    <input id="save" type="submit" value="Save"/>
+                    <button id="clear">Clear</button>
+                </form>
+            </li>
+        </ol>
+        <h3>This is your real username:</h3>
+        <p><span id="real">Waiting...</span></p>
+        <script>
+            //name the current window
+            window.name = "diafygi-detect-throwaways-throwaway";
+
+            //see if the window has any url parameters
+            var real_url = undefined;
+            var params = window.location.search.match(/\?real=([^&]+)/);
+            if(params !== null){
+
+                //save the real user to localStorage
+                //(you could replace this with a cookie if you wanted)
+                var real = decodeURIComponent(params[1]);
+                localStorage.setItem("real-user", real);
+
+                //redirect to the base url to avoid detection
+                window.location.replace(window.location.pathname);
+            }
+
+            //see if there's a real account in storage
+            var test = localStorage.getItem("real-user");
+            document.getElementById("real").innerHTML = "";
+            if(test !== null){
+                document.getElementById("real").appendChild(document.createTextNode(test));
+
+                //insert a reset button
+                var reset = document.createElement("button");
+                reset.innerHTML = "Reset";
+                reset.style.marginLeft = "5px";
+                reset.onclick = function(e){
+                    e.preventDefault();
+                    localStorage.removeItem("real-user");
+                    window.location.reload();
+                }
+                document.getElementById("real").appendChild(reset);
+            }
+            //no real user saved, so go back to waiting
+            else{
+                document.getElementById("real").appendChild(document.createTextNode("Waiting..."));
+            }
+
+            //populate throwaway text field if a throwaway user had been previously saved
+            var throwaway_value = localStorage.getItem("throwaway-user");
+            if(throwaway_value !== null){
+                document.getElementById("throwaway").value = throwaway_value;
+            }
+            else{
+                document.getElementById("throwaway").value = "";
+            }
+
+            //bind the button to clear the throwaway username
+            document.getElementById("clear").onclick = function(e){
+                e.preventDefault();
+                localStorage.removeItem("throwaway-user");
+                window.location.reload();
+            }
+
+            //save the throwaway username to localStorage
+            document.getElementsByTagName("form")[0].onsubmit = function(e){
+                e.preventDefault();
+                var throwaway = document.getElementById("throwaway").value;
+                if(throwaway === ""){
+                    localStorage.removeItem("throwaway-user");
+                    window.location.reload();
+                    return;
+                }
+                localStorage.setItem("throwaway-user", throwaway);
+
+                //send the throwaway user to normal browsing mode window
+                var url = "index.html?throwaway=" + encodeURIComponent(throwaway);
+                window.open(url, "diafygi-detect-throwaways-real");
+
+                //act like the item is saved
+                document.getElementById("save").value = "Saved!";
+                window.location.reload();
+            }
+        </script>
+    </body>
+</html>

