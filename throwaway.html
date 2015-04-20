@@ -70,9 +70,11 @@
             var throwaway_value = localStorage.getItem("throwaway-user");
             if(throwaway_value !== null){
                 document.getElementById("throwaway").value = throwaway_value;
+                document.getElementById("clear").style.display = "inline";
             }
             else{
                 document.getElementById("throwaway").value = "";
+                document.getElementById("clear").style.display = "none";
             }
 
             //bind the button to clear the throwaway username
